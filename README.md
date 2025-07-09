@@ -12,7 +12,8 @@ Este repositório contém um script em shell que realiza backup local de servido
    - MariaDB: `/etc/mysql/`, `/etc/my.cnf`
    - Sudo: `/etc/sudoers`, `/etc/sudoers.d/`
 3. Compacta tudo em um arquivo `.tar.gz` com o nome do servidor e data;
-4. Protege o backup com permissões seguras.
+4. Gera um arquivo de log `.txt` com dados da execução;
+5. **Envia automaticamente os arquivos de backup e log para o Google Drive**, usando `rclone`.
 
 ---
 
@@ -21,6 +22,7 @@ Este repositório contém um script em shell que realiza backup local de servido
 - Shell Bash (Linux)
 - PostgreSQL instalado e funcional
 - MariaDB ou MySQL instalado e funcional
+- `rclone` instalado e configurado com o Google Drive
 - Acesso sudo para executar `pg_dumpall` como `postgres`
 
 ---
@@ -71,15 +73,29 @@ chmod 600 ~/.my.cnf
 
 ---
 
-### 4. Defina o diretório de backup
+### 4. Configure o `rclone` para envio ao Google Drive
 
-O script usa por padrão:
-
+#### Instalar o `rclone`:
 ```bash
-/var/backups/servidores_banco
+curl https://rclone.org/install.sh | sudo bash
 ```
 
-Garanta que esse diretório exista e que o usuário do cron/script tenha permissão de escrita.
+#### Configurar o Google Drive:
+```bash
+rclone config
+```
+Responda:
+- `n` (novo remote)
+- Nome: `gdrive` (ou utilize o nome que preferir)
+- Tipo: `drive`
+- Configure as credenciais do Google Drive
+
+> Após configurar, o `rclone` poderá enviar arquivos ao seu Drive pessoal
+
+#### Testar envio manual:
+```bash
+rclone copy arquivo.txt gdrive:diretorio/subdiretorio/de/destino
+```
 
 ---
 
@@ -116,7 +132,12 @@ chown root:root backup_nome.tar.gz
 ## ✅ Exemplo de saída do backup
 
 ```bash
-/var/backups/servidores_banco/backup_nome-do-servidor_2025-07-08_02-00.tar.gz
+/tmp/backup/backup_nome-do-servidor_2025-07-09_02-00.tar.gz
+/tmp/backup/log_backup_nome-do-servidor_2025-07-09_02-00.txt
+```
+E os arquivos são enviados automaticamente para:
+```bash
+gdrive:diretorio/subdiretorio/de/destino
 ```
 
 ---
@@ -128,4 +149,3 @@ chown root:root backup_nome.tar.gz
 ├── backup_db_local.sh
 └── README.md
 ```
-
