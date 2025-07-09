@@ -10,38 +10,44 @@ NOME_SERVIDOR=$(hostname)
 DIR_BACKUP="/tmp/backup"
 DIR_DESTINO="${DIR_BACKUP}/backup_${DATA}"
 ARQUIVO_FINAL="${DIR_BACKUP}/backup_${NOME_SERVIDOR}_${DATA}.tar.gz"
+LOGFILE="${DIR_BACKUP}/log_backup_${NOME_SERVIDOR}_${DATA}.txt"
 USUARIO_PG="postgres"
 USUARIO_MYSQL="root"
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-# Criar diretório de backup, se não existir
+# Início do log
+echo "🔒 Servidor: $NOME_SERVIDOR" > "$LOGFILE"
+echo "🕒 Início do backup: $(date)" >> "$LOGFILE"
+
+# Criar diretório de backup
 if [ ! -d "$DIR_DESTINO" ]; then
-    echo "📁 Diretório $DIR_DESTINO não existe. Criando..."
+    echo "📁 Criando diretório $DIR_DESTINO"
     mkdir -p "$DIR_DESTINO"
 else
-    echo "📁 Diretório $DIR_DESTINO já existe. Prosseguindo..."
+    echo "📁 Diretório $DIR_DESTINO já existe"
 fi
 
 # Backup PostgreSQL
 echo "📦 Backup PostgreSQL..."
-sudo -u "$USUARIO_PG" /usr/bin/pg_dumpall | tee "${DIR_DESTINO}/postgresql_dump.sql" > /dev/null
+sudo -u "$USUARIO_PG" /usr/bin/pg_dumpall > "${DIR_DESTINO}/postgresql_dump.sql"
+TAM_PG=$(du -m "${DIR_DESTINO}/postgresql_dump.sql" | cut -f1)
+echo "📄 Tamanho do dump PostgreSQL: ${TAM_PG} MB" >> "$LOGFILE"
 
 # Arquivos de configuração PostgreSQL
-echo "🗂️ Copiando configs PostgreSQL..."
 cp -r /etc/postgresql/ "${DIR_DESTINO}/etc_postgresql/" 2>/dev/null || true
 cp -r /var/lib/pgsql/ "${DIR_DESTINO}/var_lib_pgsql/" 2>/dev/null || true
 
 # Backup MariaDB
 echo "📦 Backup MariaDB..."
-/usr/bin/mysqldump -u "$USUARIO_MYSQL" --all-databases --single-transaction --routines --triggers > "${DIR_DESTINO}/mariadb_dump.sql"
+/usr/bin/mysqldump --all-databases --single-transaction --routines --triggers > "${DIR_DESTINO}/mariadb_dump.sql"
+TAM_MYSQL=$(du -m "${DIR_DESTINO}/mariadb_dump.sql" | cut -f1)
+echo "📄 Tamanho do dump MariaDB: ${TAM_MYSQL} MB" >> "$LOGFILE"
 
 # Arquivos de configuração MariaDB
-echo "🗂️ Copiando configs MariaDB..."
 cp -r /etc/mysql/ "${DIR_DESTINO}/etc_mysql/" 2>/dev/null || true
 cp -r /etc/my.cnf "${DIR_DESTINO}/my.cnf" 2>/dev/null || true
 
 # Backup das configurações de sudo
-echo "🛡️ Copiando arquivos de configuração do sudo..."
 cp /etc/sudoers "${DIR_DESTINO}/sudoers" 2>/dev/null || true
 cp -r /etc/sudoers.d "${DIR_DESTINO}/sudoers.d" 2>/dev/null || true
 
@@ -49,10 +55,12 @@ cp -r /etc/sudoers.d "${DIR_DESTINO}/sudoers.d" 2>/dev/null || true
 echo "📦 Compactando backup..."
 tar -czf "$ARQUIVO_FINAL" -C "$DIR_BACKUP" "backup_${DATA}"
 
-# Remover pasta temporária
+# Verificar tamanho do arquivo compactado
+TAM_FINAL=$(du -m "$ARQUIVO_FINAL" | cut -f1)
+echo "🗜️ Tamanho do backup compactado: ${TAM_FINAL} MB" >> "$LOGFILE"
+
+# Limpar diretório temporário
 rm -rf "$DIR_DESTINO"
 
-# Proteção do arquivo de backup
-chmod 600 "$ARQUIVO_FINAL"
-
-echo "✅ Backup concluído com sucesso: $ARQUIVO_FINAL"
+# Final do log
+echo "✅ Backup concluído em: $(date)" >> "$LOGFILE"
