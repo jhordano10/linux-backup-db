@@ -1,8 +1,16 @@
 #!/bin/bash
 
-# ===============================
-# Backup de PostgreSQL, MariaDB e arquivos de configuração
-# ===============================
+# =============================================
+# SCRIPT DE BACKUP LOCAL - PostgreSQL e MariaDB
+# =============================================
+# Autor: Jhordano Malacarne Bravim
+# Descrição: Este script realiza o backup completo
+#            dos bancos PostgreSQL e MariaDB, incluindo
+#            arquivos de configuração e geração de log.
+# Execução: Pode ser agendado via cron.
+# Saída: Arquivo .tar.gz com o nome do servidor e timestamp
+# Log: Arquivo .txt contendo informações da execução
+# =============================================
 
 # Variáveis
 DATA=$(date +%F_%H-%M)
