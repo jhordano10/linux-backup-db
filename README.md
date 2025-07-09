@@ -1,6 +1,6 @@
 # 🗄️ Backup Local de PostgreSQL e MariaDB em Servidores Linux
 
-Este repositório contém um script em shell que realiza backup local de servidores Linux com **PostgreSQL** e **MariaDB**, incluindo os **bancos de dados** e os **arquivos de configuração dos serviços**.
+Este repositório contém um script em shell que realiza backup local de servidores Linux com **PostgreSQL** e **MariaDB**, incluindo os **bancos de dados**, **arquivos de configuração** e **envio automático para o Google Drive**.
 
 ---
 
@@ -13,7 +13,7 @@ Este repositório contém um script em shell que realiza backup local de servido
    - Sudo: `/etc/sudoers`, `/etc/sudoers.d/`
 3. Compacta tudo em um arquivo `.tar.gz` com o nome do servidor e data;
 4. Gera um arquivo de log `.txt` com dados da execução;
-5. **Envia automaticamente os arquivos de backup e log para o Google Drive**, usando `rclone`.
+5. Envia automaticamente os arquivos de backup e log para uma **pasta definida via variável** no Google Drive, utilizando o `rclone`.
 
 ---
 
@@ -86,15 +86,26 @@ rclone config
 ```
 Responda:
 - `n` (novo remote)
-- Nome: `gdrive` (ou utilize o nome que preferir)
+- Nome: `gdrive`
 - Tipo: `drive`
 - Configure as credenciais do Google Drive
 
-> Após configurar, o `rclone` poderá enviar arquivos ao seu Drive pessoal
+> O `rclone` salva as credenciais em: `/home/USUARIO/.config/rclone/rclone.conf`
 
-#### Testar envio manual:
+#### Exemplo de variável de pasta destino no script:
 ```bash
-rclone copy arquivo.txt gdrive:diretorio/subdiretorio/de/destino
+DIR_GDRIVE="diretorio/subdiretorio/de/destino"
+```
+
+#### Envio automático ao Google Drive:
+O script usa:
+```bash
+/usr/bin/rclone copy "$ARQUIVO_FINAL" "gdrive:$DIR_GDRIVE"
+/usr/bin/rclone copy "$LOGFILE" "gdrive:$DIR_GDRIVE"
+```
+E define:
+```bash
+export RCLONE_CONFIG=/home/USUARIO/.config/rclone/rclone.conf
 ```
 
 ---
@@ -104,7 +115,7 @@ rclone copy arquivo.txt gdrive:diretorio/subdiretorio/de/destino
 Edite o crontab com:
 
 ```bash
-crontab -e
+sudo crontab -e
 ```
 
 Adicione, por exemplo, para rodar diariamente às 2h:
@@ -112,6 +123,8 @@ Adicione, por exemplo, para rodar diariamente às 2h:
 ```bash
 0 2 * * * /caminho/para/backup_db_local.sh >> /var/log/backup_banco.log 2>&1
 ```
+
+Certifique-se de que o `HOME`, `PATH` e `RCLONE_CONFIG` estejam definidos corretamente no script, para que o `rclone` funcione no ambiente do cron.
 
 ---
 
@@ -126,6 +139,7 @@ chown root:root backup_nome.tar.gz
 ```
 
 - Nunca deixe a senha do banco exposta em arquivos públicos.
+- O token de acesso ao Google Drive via rclone é salvo localmente no `rclone.conf`. Proteja esse arquivo.
 
 ---
 
@@ -139,6 +153,7 @@ E os arquivos são enviados automaticamente para:
 ```bash
 gdrive:diretorio/subdiretorio/de/destino
 ```
+(Ou para a pasta que você configurar com a variável `DIR_GDRIVE`)
 
 ---
 

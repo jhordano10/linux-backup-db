@@ -24,6 +24,11 @@ USUARIO_PG="postgres"
 USUARIO_MYSQL="root"
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
+# Variáveis de ambiente para o executar o rclone
+export HOME=/home/USUARIO
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export RCLONE_CONFIG=/home/USUARIO/.config/rclone/rclone.conf
+
 # Início do log
 echo "🔒 Servidor: $NOME_SERVIDOR" > "$LOGFILE"
 echo "🕒 Início do backup: $(date)" >> "$LOGFILE"
@@ -77,7 +82,7 @@ echo "✅ Backup concluído em: $(date)" >> "$LOGFILE"
 # Enviar arquivos para o Google Drive via rclone
 echo "📤 Enviando arquivos para Google Drive..."
 
-rclone copy "$ARQUIVO_FINAL" "gdrive:$DIR_GDRIVE"
+/usr/bin/rclone copy "$ARQUIVO_FINAL" "gdrive:$DIR_GDRIVE"
 
 if [ $? -eq 0 ]; then
     echo "✅ Envio concluído com sucesso."
@@ -87,4 +92,4 @@ else
     echo "❌ Falha no envio para o Google Drive." >> "$LOGFILE"
 fi
 
-rclone copy "$LOGFILE" "gdrive:$DIR_GDRIVE"
+/usr/bin/rclone copy "$LOGFILE" "gdrive:$DIR_GDRIVE"
