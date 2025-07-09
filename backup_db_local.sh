@@ -17,6 +17,7 @@ DATA=$(date +%F_%H-%M)
 NOME_SERVIDOR=$(hostname)
 DIR_BACKUP="/tmp/backup"
 DIR_DESTINO="${DIR_BACKUP}/backup_${DATA}"
+DIR_GDRIVE="diretorio/subdiretorio/destino"
 ARQUIVO_FINAL="${DIR_BACKUP}/backup_${NOME_SERVIDOR}_${DATA}.tar.gz"
 LOGFILE="${DIR_BACKUP}/log_backup_${NOME_SERVIDOR}_${DATA}.txt"
 USUARIO_PG="postgres"
@@ -72,3 +73,18 @@ rm -rf "$DIR_DESTINO"
 
 # Final do log
 echo "✅ Backup concluído em: $(date)" >> "$LOGFILE"
+
+# Enviar arquivos para o Google Drive via rclone
+echo "📤 Enviando arquivos para Google Drive..."
+
+rclone copy "$ARQUIVO_FINAL" "gdrive:$DIR_GDRIVE"
+
+if [ $? -eq 0 ]; then
+    echo "✅ Envio concluído com sucesso."
+    echo "✅ Envio concluído com sucesso." >> "$LOGFILE"
+else
+    echo "❌ Falha no envio para o Google Drive."
+    echo "❌ Falha no envio para o Google Drive." >> "$LOGFILE"
+fi
+
+rclone copy "$LOGFILE" "gdrive:$DIR_GDRIVE"
