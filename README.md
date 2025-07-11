@@ -1,6 +1,6 @@
 # 🗄️ Backup Local de PostgreSQL e MariaDB em Servidores Linux
 
-Este repositório contém um script em shell que realiza backup local de servidores Linux com **PostgreSQL** e **MariaDB**, incluindo os **bancos de dados**, **arquivos de configuração** e **envio automático para o Google Drive**.
+Este repositório contém um script em shell que realiza backup local de servidores Linux com **PostgreSQL** e **MariaDB**, incluindo os **bancos de dados**, **arquivos de configuração**, envio automático para o **Google Drive**, e limpeza automática de arquivos antigos.
 
 ---
 
@@ -12,8 +12,14 @@ Este repositório contém um script em shell que realiza backup local de servido
    - MariaDB: `/etc/mysql/`, `/etc/my.cnf`
    - Sudo: `/etc/sudoers`, `/etc/sudoers.d/`
 3. Compacta tudo em um arquivo `.tar.gz` com o nome do servidor e data;
-4. Gera um arquivo de log `.txt` com dados da execução;
-5. Envia automaticamente os arquivos de backup e log para uma **pasta definida via variável** no Google Drive, utilizando o `rclone`.
+4. Gera um arquivo de log `.txt` com dados da execução:
+   - Nome do servidor
+   - Horário de início e fim
+   - Tamanhos dos dumps e do backup final
+   - Resultado do envio ao Google Drive
+   - Resultados da limpeza local e remota
+5. Envia automaticamente os arquivos de backup e log para uma **pasta definida via variável** no Google Drive, utilizando o `rclone`;
+6. Remove arquivos locais e no Google Drive com mais de 3 dias automaticamente.
 
 ---
 
@@ -128,18 +134,26 @@ Certifique-se de que o `HOME`, `PATH` e `RCLONE_CONFIG` estejam definidos corret
 
 ---
 
-## 🔐 Considerações de segurança
+## 🧹 Limpeza automática
 
-- Proteja o arquivo `.tar.gz` gerado pelo backup:  
-  Exemplo:
+Ao final da execução, o script remove:
+- Arquivos `.tar.gz` e `.txt` no diretório local com mais de 3 dias, usando `find`:
 
 ```bash
-chmod 600 backup_nome.tar.gz
-chown root:root backup_nome.tar.gz
+find "$DIR_BACKUP" -type f \( -name "*.tar.gz" -o -name "*.txt" \) -mtime +3 -exec rm -f {} \;
 ```
 
-- Nunca deixe a senha do banco exposta em arquivos públicos.
-- O token de acesso ao Google Drive via rclone é salvo localmente no `rclone.conf`. Proteja esse arquivo.
+- Arquivos no Google Drive com mais de 72 horas, usando:
+
+```bash
+/usr/bin/rclone delete --min-age 72h "gdrive:$DIR_GDRIVE"
+```
+
+Você pode verificar antes com:
+
+```bash
+/usr/bin/rclone ls --min-age 72h "gdrive:$DIR_GDRIVE"
+```
 
 ---
 
