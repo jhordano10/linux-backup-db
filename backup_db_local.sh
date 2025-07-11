@@ -93,3 +93,11 @@ else
 fi
 
 /usr/bin/rclone copy "$LOGFILE" "gdrive:$DIR_GDRIVE"
+
+# Remover arquivos locais com mais de 3 dias
+echo "🧹 Limpando backups locais com mais de 3 dias..." >> "$LOGFILE"
+find "$DIR_BACKUP" -type f \( -name "*.tar.gz" -o -name "*.txt" \) -mtime +3 -exec rm -f {} \; >> "$LOGFILE" 2>&1
+
+# Remover arquivos antigos do Google Drive
+echo "🧹 Removendo backups antigos do Google Drive (mais de 3 dias)..." >> "$LOGFILE"
+/usr/bin/rclone delete --min-age 72h "gdrive:$DIR_GDRIVE" >> "$LOGFILE" 2>&1
